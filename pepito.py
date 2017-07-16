@@ -15,7 +15,7 @@ from git import Repo
 def main():
     parser = argparse.ArgumentParser(description='Find secrets hidden in the depths of git.')
     parser.add_argument('--json', dest="output_json", action="store_true", help="Output in JSON")
-    parser.add_argument('--search', dest="search", action="store", help="Output in JSON", default=None)
+    parser.add_argument('--search', dest="search", action="store", help="Terms to look for", default=None)
     parser.add_argument('git_url', type=str, help='URL for secret searching')
     args = parser.parse_args()
 
@@ -96,7 +96,7 @@ def find_strings(git_url, search, printJson=False):
                             print(bcolors.OKGREEN + "Date: " + commit_time + bcolors.ENDC)
                             print(bcolors.OKGREEN + "Branch: " + branch_name + bcolors.ENDC)
                             print(bcolors.OKGREEN + "Commit: " + prev_commit.message + bcolors.ENDC)
-                            print(printableDiff)
+                            print(printableDiff.encode('utf-8'))
 
             prev_commit = curr_commit
     output["project_path"] = project_path
