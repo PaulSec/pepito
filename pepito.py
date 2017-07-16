@@ -15,50 +15,22 @@ from git import Repo
 def main():
     parser = argparse.ArgumentParser(description='Find secrets hidden in the depths of git.')
     parser.add_argument('--json', dest="output_json", action="store_true", help="Output in JSON")
+    parser.add_argument('--search', dest="search", action="store", help="Output in JSON", default=None)
     parser.add_argument('git_url', type=str, help='URL for secret searching')
     args = parser.parse_args()
-    output = find_strings(args.git_url, args.output_json)
+
+    if not args.search:
+        parser.print_help()
+        sys.exit(-1)
+
+    output = find_strings(args.git_url, args.search, args.output_json)
     project_path = output["project_path"]
     shutil.rmtree(project_path, onerror=del_rw)
 
 
-BASE64_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
-HEX_CHARS = "1234567890abcdefABCDEF"
-
 def del_rw(action, name, exc):
     os.chmod(name, stat.S_IWRITE)
     os.remove(name)
-
-def shannon_entropy(data, iterator):
-    """
-    Borrowed from http://blog.dkbza.org/2007/05/scanning-data-for-entropy-anomalies.html
-    """
-    if not data:
-        return 0
-    entropy = 0
-    for x in iterator:
-        p_x = float(data.count(x))/len(data)
-        if p_x > 0:
-            entropy += - p_x*math.log(p_x, 2)
-    return entropy
-
-
-def get_strings_of_set(word, char_set, threshold=20):
-    count = 0
-    letters = ""
-    strings = []
-    for char in word:
-        if char in char_set:
-            letters += char
-            count += 1
-        else:
-            if count > threshold:
-                strings.append(letters)
-            letters = ""
-            count = 0
-    if count > threshold:
-        strings.append(letters)
-    return strings
 
 class bcolors:
     HEADER = '\033[95m'
@@ -70,7 +42,7 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
-def find_strings(git_url, printJson=False):
+def find_strings(git_url, search, printJson=False):
     project_path = tempfile.mkdtemp()
     Repo.clone_from(git_url, project_path)
     output = {"entropicDiffs": []}
@@ -105,19 +77,10 @@ def find_strings(git_url, printJson=False):
                     stringsFound = []
                     lines = blob.diff.decode('utf-8', errors='replace').split("\n")
                     for line in lines:
-                        for word in line.split():
-                            base64_strings = get_strings_of_set(word, BASE64_CHARS)
-                            hex_strings = get_strings_of_set(word, HEX_CHARS)
-                            for string in base64_strings:
-                                b64Entropy = shannon_entropy(string, BASE64_CHARS)
-                                if b64Entropy > 4.5:
-                                    stringsFound.append(string)
-                                    printableDiff = printableDiff.replace(string, bcolors.WARNING + string + bcolors.ENDC)
-                            for string in hex_strings:
-                                hexEntropy = shannon_entropy(string, HEX_CHARS)
-                                if hexEntropy > 3:
-                                    stringsFound.append(string)
-                                    printableDiff = printableDiff.replace(string, bcolors.WARNING + string + bcolors.ENDC)
+                        if search in line:
+                            stringsFound.append(line)
+                            printableDiff = printableDiff.replace(line, bcolors.WARNING + line + bcolors.ENDC)
+
                     if len(stringsFound) > 0:
                         commit_time =  datetime.datetime.fromtimestamp(prev_commit.committed_date).strftime('%Y-%m-%d %H:%M:%S')
                         entropicDiff = {}
