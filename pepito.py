@@ -57,8 +57,27 @@ def find_strings(git_url, search, printJson=False):
             pass
 
         prev_commit = None
-        for curr_commit in repo.iter_commits():
-            if not prev_commit:
+        commits = list(repo.iter_commits())
+        for curr_commit in commits:
+            if not prev_commit and len(commits) == 1:
+                boom = commits[0]
+                EMPTY_TREE_SHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+                diff = boom.diff(EMPTY_TREE_SHA, create_patch=True)
+
+                for blob in diff:
+                    printableDiff = blob.diff.decode('utf-8', errors='replace')
+                    if printableDiff.startswith("Binary files"):
+                        continue
+                    stringsFound = []
+                    lines = blob.diff.decode('utf-8', errors='replace').split("\n")
+                    for line in lines:
+                        if search in line:
+                            stringsFound.append(line)
+                            printableDiff = printableDiff.replace(line, bcolors.WARNING + line + bcolors.ENDC)
+                    if len(stringsFound) > 0:
+                        print(bcolors.OKGREEN + "SHA-1: " + boom.hexsha + bcolors.ENDC)
+                        print(printableDiff)
+            elif not prev_commit and len(commits) > 1:
                 pass
             else:
                 #avoid searching the same diffs
@@ -95,7 +114,7 @@ def find_strings(git_url, search, printJson=False):
                         else:
                             print(bcolors.OKGREEN + "Date: " + commit_time + bcolors.ENDC)
                             print(bcolors.OKGREEN + "Branch: " + branch_name + bcolors.ENDC)
-                            print(bcolors.OKGREEN + "Commit: " + prev_commit.message + bcolors.ENDC)
+                            print(bcolors.OKGREEN + "Commit: " + prev_commit.message[:-1] + bcolors.ENDC)
                             print(bcolors.OKGREEN + "SHA-1: " + prev_commit.hexsha + bcolors.ENDC)
                             print(printableDiff)
 
