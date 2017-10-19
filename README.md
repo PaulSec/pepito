@@ -14,7 +14,7 @@ pepito https://github.com/dxa4481/truffleHog.git --search 'password'
 or
 
 ```bash
-python pepito.py file:///user/dxa4481/codeprojects/truffleHog/
+python pepito.py file:///user/dxa4481/codeprojects/truffleHog/ --search 'password'
 ```
 
 ## Install
