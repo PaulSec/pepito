@@ -76,7 +76,7 @@ def find_strings(git_url, search, printJson=False):
                             printableDiff = printableDiff.replace(line, bcolors.WARNING + line + bcolors.ENDC)
                     if len(stringsFound) > 0:
                         print(bcolors.OKGREEN + "SHA-1: " + boom.hexsha + bcolors.ENDC)
-                        print(printableDiff)
+                        print(printableDiff.encode('utf-8'))
             elif not prev_commit and len(commits) > 1:
                 pass
             else:
@@ -116,7 +116,7 @@ def find_strings(git_url, search, printJson=False):
                             print(bcolors.OKGREEN + "Branch: " + branch_name + bcolors.ENDC)
                             print(bcolors.OKGREEN + "Commit: " + prev_commit.message[:-1] + bcolors.ENDC)
                             print(bcolors.OKGREEN + "SHA-1: " + prev_commit.hexsha + bcolors.ENDC)
-                            print(printableDiff)
+                            print(printableDiff.encode('utf-8'))
 
             prev_commit = curr_commit
     output["project_path"] = project_path
